@@ -1,54 +1,58 @@
 {
-  "name": "template",
-  "description": "Self-contained TypeScript library template with a pinned toolchain",
+  "name": "oxc-codegen",
+  "version": "0.152.0",
+  "description": "Fast JavaScript code generator from an ESTree-compliant AST",
   "keywords": [
-    "library-template",
-    "oxlint",
-    "tsdown",
-    "typescript",
-    "vitest"
+    "ast",
+    "code generator",
+    "codegen",
+    "estree",
+    "javascript",
+    "oxc",
+    "typescript"
   ],
-  "license": "BSD-3-Clause",
-  "private": true,
-  "engines": {
-    "node": "^22.19.0 || >=24.0.0"
-  },
-  "type": "module",
-  "packageManager": "pnpm@11.7.0",
-  "version": "0.0.1",
-  "imports": {
-    "#src/*": "./src/*.ts"
+  "homepage": "https://oxc.rs",
+  "bugs": "https://github.com/oxc-project/oxc/issues",
+  "license": "MIT",
+  "author": "Boshen and oxc contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oxc-project/oxc.git",
+    "directory": "packages/codegen"
   },
   "files": [
-    "lib",
-    "README.md"
+    "dist"
   ],
+  "type": "module",
+  "main": "dist/index.js",
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "default": "./lib/index.js"
-    },
-    "./package.json": "./package.json"
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
-    "build": "tsdown --config-loader unrun --config tsdown.config.ts",
-    "fmt": "oxfmt --config .oxfmtrc.json --write src tests",
-    "fmt:check": "oxfmt --config .oxfmtrc.json --check src tests",
-    "lint": "oxlint --config .oxlintrc.json --type-check --deny-warnings src tests",
-    "lint:fix": "oxlint --config .oxlintrc.json --type-check --deny-warnings --fix src tests",
-    "test": "vitest run"
+    "build": "node scripts/build.ts",
+    "build-dev": "cross-env DEBUG=true node scripts/build.ts",
+    "build-test": "pnpm run build-dev && pnpm --filter oxc-parser run build-test && pnpm --filter oxc-codegen-conformance run build",
+    "build-bench": "cross-env BENCHMARKS=true node scripts/build.ts",
+    "test": "vitest run --dir ./test",
+    "bench": "pnpm run build-bench && vitest bench --run bench.bench.ts"
   },
   "devDependencies": {
-    "@tsconfig/node24": "^24.0.5",
-    "@types/node": "^22.20.0",
-    "oxfmt": "0.64.0",
-    "oxlint": "1.76.0",
-    "oxlint-tsgolint": "7.0.2001",
-    "tsdown": "^0.22.2",
-    "typescript": "^6.0.3",
-    "unrun": "^0.3.1",
-    "vitest": "^4.1.8"
+    "@types/node": "catalog:",
+    "cross-env": "catalog:",
+    "oxc-codegen-conformance": "workspace:*",
+    "oxc-parser": "workspace:*",
+    "rolldown": "catalog:",
+    "tsdown": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

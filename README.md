@@ -1,109 +1,154 @@
-# template
+# oxc-codegen
 
-English | [中文](README.zh.md)
+Fast, synchronous code generation for JavaScript and TypeScript ASTs.
 
-A self-contained TypeScript library template with a pinned toolchain. Everything the repository needs — compiler settings, static-analysis configuration, test runner, build pipeline, CI workflows, and contributor rules — lives inside this directory, and every development input resolves from this repository root.
+`oxc-codegen` turns an [ESTree](https://github.com/estree/estree) or
+[TS-ESTree](https://typescript-eslint.io/packages/typescript-estree/) AST into formatted source
+code. It supports JavaScript, JSX, TypeScript, and TSX.
 
-The toolchain and the conventions are the deliverable. The sample library is one placeholder module, so nothing incidental gets copied along with it.
+The printer is a port of Oxc's Rust `oxc_codegen` crate. With the default options, both printers
+produce byte-identical output: tab indentation, double-quoted strings, and no comments.
 
-## Repository layout
+## Installation
 
-```text
-.
-├── .github/workflows/
-│   ├── ci.yml                    # Install, lint, test, and build on every change
-│   └── release.yml               # Build and publish the packed tarball to a GitHub Release
-├── src/
-│   ├── README.md                 # Growth rules for source modules
-│   └── index.ts                  # The whole sample library: GREETING and greet()
-├── tests/
-│   ├── README.md                 # Test and snapshot conventions
-│   ├── index.test.ts             # Sample suite for the placeholder module
-│   └── snapshots/
-│       └── README.md             # Optional product-visible fixture contract
-├── .gitignore                    # Generated artifact exclusions
-├── .oxfmtrc.json                 # Formatter configuration
-├── .oxlintrc.json                # Type-aware Oxlint configuration
-├── AGENTS.md                     # Repository-local contributor rules
-├── LICENSE                       # Template license
-├── README.md                     # Repository and usage contract
-├── package.json                  # Exports, scripts, pinned dev toolchain
-├── pnpm-lock.yaml                # Reproducible registry dependency graph
-├── pnpm-workspace.yaml           # Package-manager policy
-├── tsconfig.json                 # Compiler and type-aware lint project
-├── tsdown.config.ts              # Direct source-to-runtime/declaration build
-└── vitest.config.ts              # Test runner configuration
+```sh
+npm install oxc-codegen
 ```
+
+`oxc-codegen` is ESM-only and requires Node.js `^20.19.0` or `>=22.12.0`.
 
 ## Quick start
 
-Run every command from this directory:
+Pair it with [`oxc-parser`](https://www.npmjs.com/package/oxc-parser) to parse and print source code:
 
-```sh
-pnpm install
-pnpm run fmt:check
-pnpm run lint
-pnpm test
-pnpm run build
+```js
+import { printSync } from "oxc-codegen";
+import { parseSync } from "oxc-parser";
+
+const { program } = parseSync("input.js", "const answer=6*7");
+const { code } = printSync(program);
+
+console.log(code);
+// const answer = 6 * 7;
 ```
 
-`lint` runs Oxlint with type-aware analysis and denies warnings for `src` and `tests`. `build` compiles `src/` into ready-to-pack ESM JavaScript and declarations under `lib/`; it does not run an install-time lifecycle build. Extra arguments pass through to tsdown, so `pnpm run build --sourcemap` emits source maps for local debugging while the default build emits none.
+You can also print a manually constructed AST:
 
-## The sample module
+```js
+const program = {
+  type: "Program",
+  sourceType: "script",
+  body: [
+    {
+      type: "ExpressionStatement",
+      expression: {
+        type: "CallExpression",
+        callee: {
+          type: "MemberExpression",
+          object: { type: "Identifier", name: "console" },
+          property: { type: "Identifier", name: "log" },
+          computed: false,
+          optional: false,
+        },
+        arguments: [{ type: "Literal", value: "Hello!" }],
+        optional: false,
+      },
+    },
+  ],
+};
 
-`src/index.ts` exports one constant and one function:
+console.log(printSync(program).code);
+// console.log("Hello!");
+```
+
+### TypeScript and TSX
+
+Set `ts` when the AST can contain TypeScript nodes. For TSX, set both `ts` and `jsx`:
+
+```js
+const { program } = parseSync("component.tsx", "const Box = <T,>(value: T) => <div>{value}</div>");
+
+const { code } = printSync(program, {
+  ts: true,
+  jsx: true,
+});
+```
+
+## API
+
+### `printSync(node, options?)`
 
 ```ts
-import { GREETING, greet } from 'template'
-
-greet()   // 'hello world'
-GREETING  // 'hello world'
+function printSync(
+  node: ESTree.Program | ESTree.Statement,
+  options?: Options,
+): {
+  code: string;
+  map: SourceMap | null;
+};
 ```
 
-Replace it with the library you actually want. Delete the placeholder when the first real module lands.
+Prints a complete `Program` or a single statement and returns the generated source code,
+and (when requested) a standard Source Map v3 object.
 
-## How to grow
+```js
+import { printSync } from "oxc-codegen";
+import { parseSync } from "oxc-parser";
 
-- one module per capability: `src/<feature>.ts`, or `src/<feature>/` once a capability needs several files;
-- with more than one module, reduce `src/index.ts` to a pure re-export barrel — no logic, no side effects, no default export;
-- consumer-facing options get their own `src/config.ts` owner instead of living as implementation constants;
-- process, clock, transport, and storage access belong behind a small interface, so a test replaces it instead of mocking globals;
-- failures get a small `Error` subclass so callers can catch them precisely;
-- optional state is `undefined`; the library never uses `null` as a sentinel;
-- every published module needs one tsdown entry and one `exports` entry in `package.json`.
-
-## Create your library
-
-1. Rename the package in `package.json` and update `description` and `keywords`.
-2. Replace `src/index.ts` and the sample suite in `tests/index.test.ts`.
-3. Keep the `exports` map, the `main` and `types` fields, and the tsdown entry map in step with the modules you publish.
-4. Update `README.md`, `README.zh.md`, `AGENTS.md`, and `LICENSE`.
-5. Set `private` to `false` only when the published dependencies and artifacts are ready.
-
-Keep the toolchain files as they are. `.oxlintrc.json` is the contract: fix code instead of relaxing rules, and prefer editing over adding an `oxlint-disable` directive, because warnings are denied.
-
-## CI
-
-Two GitHub Actions workflows ship with the template:
-
-- `.github/workflows/ci.yml` — every push to `main` and every pull request: install with the frozen lockfile, Oxlint, tests, and build.
-- `.github/workflows/release.yml` — every push to `main`: the same checks, then `pnpm pack` into `dist/pkg.tgz` and publish that tarball to the GitHub Release tagged `v<version>` from `package.json`. Bump the version to cut a new release; re-pushing the same version refreshes that release's artifact.
-
-Both workflows read the pnpm version from `packageManager` in `package.json`, so keep that field in sync with the toolchain you actually use.
-
-## Distribution checks
-
-Before publishing, build and inspect the final archive:
-
-```sh
-pnpm run lint
-pnpm test
-pnpm run build
-pnpm pack --dry-run --json
+const sourceText = "const answer=6*7";
+const { program } = parseSync("input.js", sourceText);
+const { code, map } = printSync(program, {
+  sourcemap: true,
+  sourceFilename: "input.js",
+  sourceText,
+});
 ```
 
-The packed archive must contain every runtime and declaration file named by `main`, `types`, `exports`, and `files`. Consumers install the ready-made `lib/` output; no `prepare` script runs on install.
+Source-map mappings require `sourceText` and nodes with valid Oxc `start` / `end` offsets.
+A manually constructed AST without offsets can still be printed, but its source map has
+an empty `mappings` string.
 
-## Testing guidance
+### Options
 
-The sample suite in `tests/index.test.ts` shows the conventions: named test functions, `expect.hasAssertions()` first, an explicit timeout, and source imports through `#src/<name>`. Add `tests/<feature>.test.ts` as the library grows, and introduce `tests/harness.ts` only when several suites need the same composed setup. Stable, product-visible expected output belongs under `tests/snapshots/`.
+| Option                | Type      | Default | Description                                                      |
+| :-------------------- | :-------- | :------ | :--------------------------------------------------------------- |
+| `indent`              | `string`  | `"\t"`  | Non-empty string of spaces and/or tabs used for one indent level |
+| `startingIndentLevel` | `number`  | `0`     | Starting indent level, from `0` to `1000`                        |
+| `jsx`                 | `boolean` | `false` | Enable TSX-safe printing for ambiguous TypeScript syntax         |
+| `ts`                  | `boolean` | `false` | Select the printer that supports TypeScript nodes                |
+| `sourcemap`           | `boolean` | `false` | Return a Source Map v3 object in `map`                           |
+| `sourceFilename`      | `string`  | `""`    | Original source filename recorded in the source map              |
+| `sourceText`          | `string`  | -       | Original text required for source-map mappings and content       |
+
+## Why pure JavaScript?
+
+Most Oxc packages use native bindings. This package deliberately does not: when an AST already
+lives in JavaScript, passing the entire object graph across a JS/native boundary can cost more than
+printing it in place. `oxc-codegen` avoids that serialization and uses specialized printer builds
+for JavaScript and TypeScript workloads.
+
+See [DESIGN.md](https://github.com/oxc-project/oxc/blob/main/packages/codegen/DESIGN.md) for the
+implementation details and performance constraints.
+
+## Current limitations
+
+- Comments are not printed.
+- Minified output is not supported.
+
+## Benchmarks
+
+Representative time per `printSync` call:
+
+| Fixture                      |     Bytes |       Time |
+| :--------------------------- | --------: | ---------: |
+| `tiny.js`                    |        26 |  0.0001 ms |
+| `RadixUIAdoptionSection.jsx` |     2,518 |  0.0070 ms |
+| `react.development.js`       |    72,141 |  0.1518 ms |
+| `binder.ts`                  |   193,077 |  0.3364 ms |
+| `App.tsx`                    |   415,340 |  1.2912 ms |
+| `lodash.js`                  |   544,096 |  0.7977 ms |
+| `kitchen-sink.tsx`           |   732,222 |  4.2924 ms |
+| `antd.js`                    | 6,683,633 | 16.9652 ms |
+
+These figures come from one machine and are illustrative, not a regression baseline.
+Results vary between runs, most noticeably for large fixtures such as `antd.js`.

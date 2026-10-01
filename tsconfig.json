@@ -1,24 +1,14 @@
 {
-  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2024",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "sourceMap": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
+    "lib": ["ESNext"],
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "target": "ESNext",
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true,
-    "verbatimModuleSyntax": false,
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "types": ["node"],
-    "ignoreDeprecations": "6.0"
+    "skipLibCheck": true,
+    "types": ["node"]
   },
-  "include": ["src", "tests"]
+  "exclude": ["node_modules", "dist"]
 }

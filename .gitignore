@@ -1,6 +1,2 @@
-lib/
-node_modules/
-*.tsbuildinfo
-*.tgz
-coverage/
-.pnpm-store/
+/node_modules/
+/dist/
