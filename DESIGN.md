@@ -319,7 +319,7 @@ mechanisms guard them, all removed from release builds.
    An author who was wrong about `last` being dead gets a clear failure, not a wrongly spaced construct.
 3. **The numbering assertions** described above.
 
-This is why the debug build is the one to run the conformance suites against - `pnpm run build-test`.
+The default comparison suite builds the release variants before running - `pnpm test`.
 
 ## Four builds from one source tree
 
@@ -622,9 +622,8 @@ so that arm can run.
 - `assert {...}` versus `with {...}`
 - The span of a `with {...}` clause (only its individual attributes have ESTree locations)
 
-The conformance harness normalizes the Rust AST down to what ESTree can express before printing,
-rather than expecting the JS side to reproduce information it was never given.
-See `Normalize` in `tasks/codegen_conformance/src/lib.rs`.
+The comparison suite gives both printers the same `oxc-parser` AST, so neither side is expected to
+reproduce information that ESTree cannot express.
 
 ### Positions, and other producers
 
@@ -633,19 +632,23 @@ See `Normalize` in `tasks/codegen_conformance/src/lib.rs`.
 
 ## How it is tested
 
-`oxc-codegen` is tested against all Test262, Acorn-JSX, and TypeScript test cases - about 62,000 fixtures.
+The standalone package can prepare the same pinned Test262, TypeScript, and ESTree JSX fixture
+revisions used by upstream, then compare them with the official published `oxc-codegen` package
+at the same version. `pnpm test` runs the repository-local suite. `pnpm run test:conformance`
+prepares the ignored fixture repositories and runs the external JSX, Test262, and TypeScript
+comparison suites.
 
 Every fixture is printed three times:
 
-1. In Rust, with a source map, via the `oxc-codegen-conformance` NAPI addon (`tasks/codegen_conformance`).
-2. In JS, through the no-maps build.
-3. In JS, through the separately compiled maps build.
+1. Through the official published `oxc-codegen` package.
+2. Through the no-maps build.
+3. Through the separately compiled maps build.
 
 All three generated outputs must agree byte for byte. Every decoded generated/original line, column,
-and optional original name from the maps build must also agree with Rust, including ordering and
-duplicate suppression.
+and optional original name from the maps build must also agree with the official package, including
+ordering and duplicate suppression.
 
-Both sides parse the same source text with the same `SourceType`, derived by the same function.
+Both printers receive the same AST from `oxc-parser`, with the same `SourceType` and parser options.
 Fixtures which do not parse cleanly are skipped, rather than passing quietly.
 
 Every fixture is checked in **both `preserveParens` modes**. They are different paths through the printer -
@@ -666,7 +669,7 @@ A checklist, all of it argued for above.
 6. **Do not add an arm near the top of `printExpression`, `printStatement` or other dispatch functions**
    unless the node type really is that common.
 7. **Do not relax `const_functions` to `let`.**
-8. **Run the conformance suites against a debug build** (`pnpm run build-test`), so the assertions are live.
+8. **Run the comparison suites** (`pnpm test` and `pnpm run test:conformance`) after changing printer behavior.
 9. **Benchmark against a release build** (`pnpm run bench` rebuilds one first). A debug build keeps
    `debugAssert` calls and does not represent shipped performance.
 

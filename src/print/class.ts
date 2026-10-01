@@ -42,7 +42,7 @@ import type {
   MethodDefinitionNode,
   PropertyDefinitionNode,
 } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Print a class declaration or expression, decorators and heritage clauses included.

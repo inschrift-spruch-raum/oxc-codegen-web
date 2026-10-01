@@ -17,7 +17,7 @@ import { printTypeArguments } from "./typescript.ts";
 
 import type { State } from "../state.ts";
 import type { UnknownNode } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Print a JSX element, its attributes and its children.

@@ -1,9 +1,8 @@
 // Source map tests.
 //
-// The conformance checker compares the complete Source Map v3 object against Rust `oxc_codegen`.
-// The remaining tests here check invariants which give a more local failure than a full mapping diff -
-// positions stay in bounds and ordered, indentation is respected, identifier text agrees,
-// and turning source maps on does not change the generated code.
+// The inline cases compare code and complete Source Map v3 output with the official published
+// `oxc-codegen` package. The remaining tests check local invariants - positions stay in bounds and
+// ordered, indentation is respected, identifier text agrees, and source maps do not change code.
 //
 // Mappings use Oxc `start` / `end` offsets.
 
@@ -17,7 +16,7 @@ import { checkFixture, getEcmaScriptLineTable } from "./utils/common.ts";
 
 import type { Program } from "oxc-parser";
 import type { SourceMap } from "../dist/index.js";
-import type * as ESTree from "../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 // Same directory the benchmarks download their fixtures to. Whichever are already cached are used.
 // The inline fixtures below always run.
@@ -77,7 +76,7 @@ export default NS;
 
 const INLINE_UNICODE = 'const smile = "😀";\r\nconst café = `first\u2028second`;\nsmile + café;';
 
-describe("Rust conformance", () => {
+describe("source map conformance", () => {
   test.each([
     { name: "inline.js", code: INLINE_JS, lang: "js" as const },
     { name: "inline.ts", code: INLINE_TS, lang: "ts" as const },
@@ -107,7 +106,7 @@ describe("Rust conformance", () => {
       code: Array.from({ length: 100 }, (_, index) => `x${index};`).join("\r\n"),
       lang: "js" as const,
     },
-  ])("$name mappings match oxc_codegen", ({ name, code, lang }) => {
+  ])("$name mappings match the official package", ({ name, code, lang }) => {
     expect(checkFixture(name, code, lang, "module")).toBe(true);
   });
 

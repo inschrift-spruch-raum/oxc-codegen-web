@@ -10,7 +10,7 @@ import { CTX_NONE } from "./operators.ts";
 import { PREC_COMMA, PREC_COMPARE, PREC_PREFIX } from "./precedence.ts";
 
 import type { State } from "../state.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Print the left hand side of an assignment.

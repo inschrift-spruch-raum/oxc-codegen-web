@@ -4,13 +4,13 @@ import { parseSync, Visitor } from "oxc-parser";
 import type { Plugin } from "rolldown";
 
 // Path to file which defines assertion functions
-const ASSERTS_PATH = pathJoin(import.meta.dirname, "../src-js/asserts.ts");
+const ASSERTS_PATH = pathJoin(import.meta.dirname, "../src/asserts.ts");
 
 // Prefix naming an assertion function, wherever it is defined
 const DEBUG_ASSERT_PREFIX = "debugAssert";
 
 /**
- * Plugin to remove imports of `typeAssertIs` from `src-js/asserts.ts`, and all its call sites.
+ * Plugin to remove imports of `typeAssertIs` from `src/asserts.ts`, and all its call sites.
  *
  * ```ts
  * // Original code
@@ -35,8 +35,8 @@ const DEBUG_ASSERT_PREFIX = "debugAssert";
 const plugin: Plugin = {
   name: "remove-asserts",
   transform: {
-    // Only process TS files in `src-js` directory
-    filter: { id: /\/src-js\/.+(?<!\.d)\.ts$/ },
+    // Only process TS files in `src` directory
+    filter: { id: /\/src\/.+(?<!\.d)\.ts$/ },
 
     async handler(code, path, meta) {
       const magicString = meta.magicString!;

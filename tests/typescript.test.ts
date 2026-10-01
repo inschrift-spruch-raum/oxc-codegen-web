@@ -1,6 +1,6 @@
 // TypeScript conformance.
 //
-// Tests this package prints every TypeScript fixture exactly as Rust `oxc_codegen` prints it.
+// Tests this package prints every TypeScript fixture exactly as the official `oxc-codegen` package does.
 //
 // A TypeScript test file can hold several units, separated by `// @filename:` directives,
 // each with its own language and module setting. `makeUnitsFromTest` splits them out,
