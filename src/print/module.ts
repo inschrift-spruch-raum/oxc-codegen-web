@@ -21,7 +21,7 @@ import {
 
 import type { State } from "../state.ts";
 import type { ExportNamedDeclarationNode } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Print an `import` statement, in any of its forms.

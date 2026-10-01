@@ -10,7 +10,7 @@ import { PREC_CALL, PREC_EXPONENTIATION, PREC_LOWEST, PREC_PREFIX } from "./prec
 
 import type { State } from "../state.ts";
 import type { LiteralExtras } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * One level of the binary/logical expression chain.

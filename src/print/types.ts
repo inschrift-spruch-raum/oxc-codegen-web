@@ -11,7 +11,7 @@
 //    in a handful of places. The `*Node` aliases widen the properties where they do, and the branches
 //    which read a property Oxc's AST doesn't have at all assert its type at the point of use.
 
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /** A node whose type the printer doesn't handle. */
 export interface UnknownNode {

@@ -7,8 +7,9 @@
 // reads as a block, and a function or class expression would read as a declaration.
 //
 // This suite pins that observable behaviour, not the mechanism which produces it. Every case is a
-// source snippet printed by Rust `oxc_codegen` and by this package, and the two must agree - so
-// nothing here states where the parens belong, only that both printers put them in the same places.
+// source snippet printed by the official `oxc-codegen` package and by this package, and both must
+// agree - so nothing here states where the parens belong, only that both printers put them in the
+// same places.
 // It is meant to survive a rewrite of the position-marker machinery, and to be the gate on one.
 //
 // The matrix is every expression which can be the leftmost token of a construct, crossed with the

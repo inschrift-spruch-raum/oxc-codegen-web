@@ -71,8 +71,8 @@ export default function unmapWritesPlugin(sourcemaps: boolean, debug: boolean): 
   return {
     name: "unmap-writes",
     transform: {
-      // Only process TS files in `src-js/print` directory
-      filter: { id: /\/src-js\/print\/.+\.ts$/ },
+      // Only process TS files in `src/print` directory
+      filter: { id: /\/src\/print\/.+\.ts$/ },
 
       handler(code, path, meta) {
         // Don't alter anything in debug sourcemap builds.

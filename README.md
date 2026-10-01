@@ -1,8 +1,8 @@
-# oxc-codegen
+# oxc-codegen-web
 
 Fast, synchronous code generation for JavaScript and TypeScript ASTs.
 
-`oxc-codegen` turns an [ESTree](https://github.com/estree/estree) or
+`oxc-codegen-web` turns an [ESTree](https://github.com/estree/estree) or
 [TS-ESTree](https://typescript-eslint.io/packages/typescript-estree/) AST into formatted source
 code. It supports JavaScript, JSX, TypeScript, and TSX.
 
@@ -12,17 +12,17 @@ produce byte-identical output: tab indentation, double-quoted strings, and no co
 ## Installation
 
 ```sh
-npm install oxc-codegen
+npm install oxc-codegen-web
 ```
 
-`oxc-codegen` is ESM-only and requires Node.js `^20.19.0` or `>=22.12.0`.
+`oxc-codegen-web` is ESM-only and requires Node.js `^20.19.0` or `>=22.12.0`.
 
 ## Quick start
 
 Pair it with [`oxc-parser`](https://www.npmjs.com/package/oxc-parser) to parse and print source code:
 
 ```js
-import { printSync } from "oxc-codegen";
+import { printSync } from "oxc-codegen-web";
 import { parseSync } from "oxc-parser";
 
 const { program } = parseSync("input.js", "const answer=6*7");
@@ -92,7 +92,7 @@ Prints a complete `Program` or a single statement and returns the generated sour
 and (when requested) a standard Source Map v3 object.
 
 ```js
-import { printSync } from "oxc-codegen";
+import { printSync } from "oxc-codegen-web";
 import { parseSync } from "oxc-parser";
 
 const sourceText = "const answer=6*7";
@@ -120,11 +120,24 @@ an empty `mappings` string.
 | `sourceFilename`      | `string`  | `""`    | Original source filename recorded in the source map              |
 | `sourceText`          | `string`  | -       | Original text required for source-map mappings and content       |
 
+## Testing
+
+```sh
+pnpm install
+pnpm test
+```
+
+`pnpm test` builds the package and runs the repository-local comparison suite. Run
+`pnpm run test:conformance` to prepare the pinned fixture repositories and run the JSX, Test262,
+and TypeScript comparison suites against the published `oxc-codegen` package. The fixture
+repositories live under the ignored `tasks/coverage/` directory; the conformance command requires
+Git and network access when they are not already cached.
+
 ## Why pure JavaScript?
 
 Most Oxc packages use native bindings. This package deliberately does not: when an AST already
 lives in JavaScript, passing the entire object graph across a JS/native boundary can cost more than
-printing it in place. `oxc-codegen` avoids that serialization and uses specialized printer builds
+printing it in place. `oxc-codegen-web` avoids that serialization and uses specialized printer builds
 for JavaScript and TypeScript workloads.
 
 See [DESIGN.md](https://github.com/oxc-project/oxc/blob/main/packages/codegen/DESIGN.md) for the

@@ -46,7 +46,7 @@ import {
 
 import type { State } from "../state.ts";
 import type { UnknownNode } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Entry point for a whole file.

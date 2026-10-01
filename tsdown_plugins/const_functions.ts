@@ -31,8 +31,8 @@ import type { Plugin } from "rolldown";
 const plugin: Plugin = {
   name: "const-functions",
   transform: {
-    // Only process TS files in `src-js/print` directory
-    filter: { id: /\/src-js\/print\/.+\.ts$/ },
+    // Only process TS files in `src/print` directory
+    filter: { id: /\/src\/print\/.+\.ts$/ },
 
     handler(code, path, meta) {
       const magicString = meta.magicString!;

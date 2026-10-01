@@ -1,8 +1,13 @@
 # Test Layout
 
-`tests/index.test.ts` is the sample suite. Source modules are imported through
-the package-local `#src/<name>` mapping, so tests exercise the same specifiers
-the library publishes.
+`tests/index.test.ts` is the public API smoke suite. The default `pnpm test`
+builds the package, then runs the API, printer, source-map, local fixture, and
+leftmost-position suites.
+
+The external JSX, Test262, and TypeScript suites compare against the official
+published `oxc-codegen` package. Run `pnpm run test:conformance` to prepare their
+pinned fixture repositories and run those suites. The repositories are kept under
+the ignored `tasks/coverage/` directory.
 
 Conventions:
 

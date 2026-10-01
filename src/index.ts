@@ -23,7 +23,7 @@ import { createRequire } from "node:module";
 import { State } from "./state.ts";
 
 import type { CodegenResult, Options } from "./print/options.ts";
-import type * as ESTree from "../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 export type { CodegenResult, Options, SourceMap } from "./print/options.ts";
 

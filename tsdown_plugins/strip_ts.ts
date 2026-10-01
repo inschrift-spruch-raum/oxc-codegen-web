@@ -3,7 +3,7 @@ import type { Plugin } from "rolldown";
 /**
  * Plugin to remove the TypeScript-only regions of `print.ts` from the JS-only builds.
  *
- * The `TS` build-time constant (see `src-js/globals.d.ts`) lets the minifier drop TS-only code
+ * The `TS` build-time constant (see `src/globals.d.ts`) lets the minifier drop TS-only code
  * in expression positions - `if (TS && node.declare)` folds to nothing when `TS` is `false`.
  * But `case "TSEnumDeclaration":` switch arms are not expressions, and no minifier can remove an arm
  * on the grounds that its node type never occurs. Those arms are fenced with `IF TS` / `END_IF`
@@ -40,8 +40,8 @@ const stripTsPlugin = (): Plugin => {
     },
 
     transform: {
-      // Only process TS files in `src-js/print` directory
-      filter: { id: /\/src-js\/print\/.+\.ts$/ },
+      // Only process TS files in `src/print` directory
+      filter: { id: /\/src\/print\/.+\.ts$/ },
 
       handler(code, _path, meta) {
         const magicString = meta.magicString!;

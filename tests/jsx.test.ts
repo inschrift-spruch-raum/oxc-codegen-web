@@ -1,6 +1,6 @@
 // Acorn-JSX conformance.
 //
-// Tests this package prints every JSX fixture exactly as Rust `oxc_codegen` prints it.
+// Tests this package prints every JSX fixture exactly as the official `oxc-codegen` package does.
 
 import { readdir, readFile } from "node:fs/promises";
 import { join as pathJoin } from "node:path";

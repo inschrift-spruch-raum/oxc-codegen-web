@@ -12,7 +12,7 @@ import constFunctionsPlugin from "./tsdown_plugins/const_functions.ts";
 const isEnabled = (env: string | undefined) => env === "true" || env === "1";
 
 // When run with `pnpm run build-dev`, generate a debug build with extra assertions.
-// This is the build prepared by `pnpm run build-test` for conformance tests.
+// This is the build prepared by `pnpm run build-dev` for conformance tests.
 // It replaces the release build in `dist`, so rebuild with `pnpm run build` before benchmarking.
 const DEBUG = isEnabled(process.env.DEBUG);
 
@@ -23,7 +23,7 @@ const BENCHMARKS = isEnabled(process.env.BENCHMARKS);
 // Only remove assertions in release build. Debug builds keep `debugAssert` calls live.
 const assertPlugins = DEBUG ? [] : [removeAssertsPlugin];
 
-// Global constants defined at build time. See `src-js/globals.d.ts`.
+// Global constants defined at build time. See `src/globals.d.ts`.
 // `DEBUG: false` lets the minifier remove the body of `debugAssert` and any other debug-only code.
 const definedGlobals = {
   DEBUG: DEBUG ? "true" : "false",
@@ -61,14 +61,14 @@ const minifyConfig = DEBUG
     }
   : true;
 
-// One printer build. The printer is built 4 times from `src-js/print/index.ts`,
-// over 2 build-time feature flags (see `src-js/globals.d.ts`):
+// One printer build. The printer is built 4 times from `src/print/index.ts`,
+// over 2 build-time feature flags (see `src/globals.d.ts`):
 //
 // - `SOURCEMAPS`: Source map support costs a little speed even when unused.
 // - `TS`: TypeScript syntax support. JS-only builds lose all the TS field checks (via minifier dead-code removal)
 //   and the TS switch arms + printer functions (via `strip_ts.ts`).
 //
-// `src-js/index.ts` loads whichever build the caller's options call for.
+// `src/index.ts` loads whichever build the caller's options call for.
 //
 // In builds without source maps, nothing reads the mapping arguments the mapped writes take,
 // so `unmap_writes` rewrites every mapped write call, and the imports which bring them in,
@@ -81,7 +81,7 @@ const printerConfig = (name: string, { sourcemaps, ts }: { sourcemaps: boolean; 
   minify: minifyConfig,
   // Only the entry point's types are published
   dts: false,
-  entry: { [name]: "src-js/print/index.ts" },
+  entry: { [name]: "src/print/index.ts" },
   define: {
     ...definedGlobals,
     SOURCEMAPS: sourcemaps ? "true" : "false",
@@ -101,7 +101,7 @@ export default defineConfig([
   // Entry point
   {
     ...commonConfig,
-    entry: { index: "src-js/index.ts" },
+    entry: { index: "src/index.ts" },
     minify: minifyConfig,
     dts: true,
     define: definedGlobals,

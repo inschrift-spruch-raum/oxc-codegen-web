@@ -1,6 +1,6 @@
 // Test262 conformance.
 //
-// Tests this package prints every Test262 fixture exactly as Rust `oxc_codegen` prints it.
+// Tests this package prints every Test262 fixture exactly as the official `oxc-codegen` package does.
 
 import { readdir, readFile } from "node:fs/promises";
 import { join as pathJoin } from "node:path";
@@ -10,6 +10,7 @@ import { checkFixture, TEST262_DIR_PATH, test262SourceType } from "./utils/commo
 
 // Test262 keeps its fixtures' shared helpers in `harness`, which are not test cases
 const fixturePaths = (await readdir(TEST262_DIR_PATH, { recursive: true }))
+  .map((path) => path.replaceAll("\\", "/"))
   .filter((path) => path.endsWith(".js") && !path.startsWith("harness/"))
   .sort();
 

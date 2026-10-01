@@ -18,7 +18,7 @@ import { printString } from "./string.ts";
 
 import type { State } from "../state.ts";
 import type { LiteralExtras } from "./types.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * The literal types, which all share `type: "Literal"` and are told apart by `typeof value`.

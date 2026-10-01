@@ -1,8 +1,8 @@
 // Local fixture conformance.
 //
-// Put a JavaScript or TypeScript reproduction anywhere under `test/fixtures/`.
+// Put a JavaScript or TypeScript reproduction anywhere under `tests/fixtures/`.
 // This suite infers its language from the extension and checks the normal and source-map printer
-// builds against Rust `oxc_codegen`, in both `preserveParens` modes.
+// builds against the official `oxc-codegen` package, in both `preserveParens` modes.
 
 import { readdir, readFile } from "node:fs/promises";
 import { join as pathJoin, relative as pathRelative } from "node:path";

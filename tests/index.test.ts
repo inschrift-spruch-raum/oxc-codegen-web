@@ -1,21 +1,43 @@
-import { describe, expect, it } from 'vitest'
+import { parseSync } from "oxc-parser";
+import { describe, expect, it } from "vitest";
 
-import { GREETING, greet } from '#src/index'
+import { printSync } from "../dist/index.js";
 
-const TEST_TIMEOUT = 5000
+const PARSE_OPTIONS = {
+  preserveParens: false,
+  experimentalRawTransfer: true,
+};
 
-function testGreetsTheWorld(): void {
-  expect.hasAssertions()
-  expect(greet()).toBe('hello world')
+function parseProgram(sourceText: string) {
+  const { program, errors } = parseSync("index.test.js", sourceText, PARSE_OPTIONS);
+  if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
+  return program;
 }
 
-function testExportsTheGreeting(): void {
-  expect.hasAssertions()
-  expect(GREETING).toBe('hello world')
+function testPrintsProgram(): void {
+  expect.hasAssertions();
+  const program = parseProgram("const value=1;");
+  expect(printSync(program).code).toBe("const value = 1;\n");
 }
 
-describe('template', () => {
-  it('greets the world', { timeout: TEST_TIMEOUT }, testGreetsTheWorld)
+function testPrintsSourceMap(): void {
+  expect.hasAssertions();
+  const sourceText = "const value=1;";
+  const program = parseProgram(sourceText);
+  const result = printSync(program, {
+    sourcemap: true,
+    sourceFilename: "index.test.js",
+    sourceText,
+  });
+  expect(result.code).toBe("const value = 1;\n");
+  expect(result.map).toMatchObject({
+    version: 3,
+    sources: ["index.test.js"],
+    sourcesContent: [sourceText],
+  });
+}
 
-  it('exports the greeting', { timeout: TEST_TIMEOUT }, testExportsTheGreeting)
-})
+describe("public API", () => {
+  it("prints a parsed program", testPrintsProgram);
+  it("prints a parsed program with a source map", testPrintsSourceMap);
+});

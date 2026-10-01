@@ -16,7 +16,7 @@ import { printProgram, printStatement } from "./statement.ts";
 
 import type { CodegenResult, Options } from "./options.ts";
 import type { State } from "../state.ts";
-import type * as ESTree from "../../../../npm/oxc-types/types.d.ts";
+import type * as ESTree from "@oxc-project/types";
 
 /**
  * Print `node`, returning an object including the generated code.

@@ -2,28 +2,27 @@
 //
 // Each test takes one fixture's source text and prints it three times:
 //
-// 1. In Rust, with `oxc_parser` + `oxc_codegen`, via the `oxc_codegen_conformance` Node addon.
-// 2. In JS without source maps, by parsing with `oxc-parser` and printing with this package.
-// 3. In JS with source maps, through the separately compiled maps-enabled build.
+// 1. With the official published `oxc-codegen` package as the reference implementation.
+// 2. With this package without source maps.
+// 3. With this package's separately compiled maps-enabled build.
 //
-// Each must agree byte for byte. Both sides are given the same source text and the same `lang`
-// and `sourceType`, and the addon derives its `SourceType` with `oxc_napi::get_source_type` -
-// the same function `oxc-parser` uses. So the two printers are handed the same AST and the only
-// things under test are printing and decoded source map positions and names.
+// Each must agree byte for byte. Both printers are handed the same AST, so the only things under
+// test are printing and decoded source map positions and names.
 //
-// Fixtures which do not parse cleanly have no AST to print, so the addon returns `null` for them
-// and the test is reported as skipped rather than passing quietly.
+// Fixtures which do not parse cleanly have no AST to print, so they are reported as skipped rather
+// than passing quietly.
 
 import { join as pathJoin } from "node:path";
-import { codegen as rustPrint } from "oxc-codegen-conformance";
 import { parseSync } from "oxc-parser";
 import { expect } from "vitest";
 
 import { printSync } from "../../dist/index.js";
 
-export const ROOT_DIR_PATH = pathJoin(import.meta.dirname, "../../../..");
+import { printSync as referencePrintSync } from "oxc-codegen";
 
-// The fixture suites, all of them git submodules of this repo. `just submodules` clones them.
+export const ROOT_DIR_PATH = pathJoin(import.meta.dirname, "../..");
+
+// The fixture suites are prepared by `pnpm run test:fixtures`.
 export const TEST262_DIR_PATH = pathJoin(ROOT_DIR_PATH, "tasks/coverage/test262/test");
 export const TS_CASES_DIR_PATH = pathJoin(
   ROOT_DIR_PATH,
@@ -75,7 +74,7 @@ export function getEcmaScriptLineTable(sourceText: string): {
 }
 
 /**
- * Check this package prints a fixture exactly as Rust `oxc_codegen` does.
+ * Check this package prints a fixture exactly as the official `oxc-codegen` package does.
  *
  * Checked in both parse modes - see `PRESERVE_PARENS_MODES`.
  *
@@ -107,11 +106,6 @@ export function checkFixture(
 
   let checked = false;
   for (const preserveParens of PRESERVE_PARENS_MODES) {
-    // Rust first.
-    // `null` means the fixture does not parse cleanly, so nothing to compare.
-    const expected = rustPrint(filename, sourceText, { lang, sourceType, preserveParens });
-    if (expected === null) continue;
-
     const { program, errors } = parseSync(filename, sourceText, {
       preserveParens,
       lang,
@@ -123,26 +117,31 @@ export function checkFixture(
       experimentalRawTransfer: true,
     });
 
-    // Rust parsed it cleanly, so this should not happen - if it does, it is a parser difference
-    // rather than a printer one, and saying so is more use than a diff of printed output.
-    expect(errors, "Rust parsed this fixture cleanly but `oxc-parser` did not").toEqual([]);
+    // Both printers use the same parser. A syntax error means there is no AST to compare.
+    if (errors.length > 0) continue;
 
-    const { code: actual } = printSync(program, { ts, jsx });
-    expect(actual, `preserveParens: ${preserveParens}`).toBe(expected.code);
+    const options = { ts, jsx };
+    const { code: expected } = referencePrintSync(program, options);
+    const { code: actual } = printSync(program, options);
+    expect(actual, `preserveParens: ${preserveParens}`).toBe(expected);
 
     // Source maps use the maps-enabled build, which is compiled separately from the normal printer.
-    // Source offsets are converted at the end. Compare both its code and complete Source Map v3 output against Rust.
-    const { code: actualWithSourceMap, map } = printSync(program, {
+    // Compare both its code and complete Source Map v3 output against the official package.
+    const mapOptions = {
       ts,
       jsx,
       sourcemap: true,
       sourceFilename: filename,
       sourceText,
-    });
-    expect(actualWithSourceMap, `preserveParens: ${preserveParens}, sourceMap: code`).toBe(
-      expected.code,
+    };
+    const expectedWithSourceMap = referencePrintSync(program, mapOptions);
+    const actualWithSourceMap = printSync(program, mapOptions);
+    expect(actualWithSourceMap.code, `preserveParens: ${preserveParens}, sourceMap: code`).toBe(
+      expectedWithSourceMap.code,
     );
-    expect(map, `preserveParens: ${preserveParens}, sourceMap`).toEqual(expected.map);
+    expect(actualWithSourceMap.map, `preserveParens: ${preserveParens}, sourceMap`).toEqual(
+      expectedWithSourceMap.map,
+    );
     checked = true;
   }
 
