@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-面向 JavaScript、TypeScript、JSX 和 TSX AST 的快速同步代码生成器。
+面向 JavaScript、TypeScript、JSX 和 TSX AST 的快速异步代码生成器。
 
 `oxc-codegen-web` 接收符合 ESTree 或 TS-ESTree 的 AST，输出格式化后的源代码，并可选生成标准 Source Map v3。
 
@@ -12,7 +12,7 @@
 pnpm add oxc-codegen-web
 ```
 
-`oxc-codegen-web` 是仅支持 ESM 的包，要求 Node.js `^20.19.0` 或 `>=22.12.0`。
+`oxc-codegen-web` 是仅支持 ESM 的包，支持 Node.js `^20.19.0` 或 `>=22.12.0`。打印器通过标准动态 `import()` 加载，因此同一个包入口也可由浏览器打包器使用。
 
 ## 快速开始
 
@@ -20,21 +20,24 @@ pnpm add oxc-codegen-web
 
 ```js
 import { parseSync } from "oxc-parser";
-import { printSync } from "oxc-codegen-web";
+import { print } from "oxc-codegen-web";
 
 const { program } = parseSync("input.js", "const answer=6*7");
-const { code } = printSync(program);
+const { code } = await print(program);
 
 console.log(code);
 // const answer = 6 * 7;
 ```
+
+第一次调用只会加载当前需要的 JavaScript 或 TypeScript 打印器构建，以及是否启用 Source Map 的对应版本。
+后续调用复用运行时模块缓存。
 
 生成 Source Map 时传入原始文件名和源文本：
 
 ```js
 const sourceText = "const answer=6*7";
 const { program } = parseSync("input.js", sourceText);
-const result = printSync(program, {
+const result = await print(program, {
   sourcemap: true,
   sourceFilename: "input.js",
   sourceText,

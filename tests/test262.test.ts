@@ -18,6 +18,6 @@ describe.concurrent("test262", () => {
   // oxlint-disable-next-line vitest/expect-expect
   it.for(fixturePaths)("%s", async (path, ctx) => {
     const sourceText = await readFile(pathJoin(TEST262_DIR_PATH, path), "utf8");
-    if (!checkFixture(path, sourceText, "js", test262SourceType(sourceText))) ctx.skip();
+    if (!await checkFixture(path, sourceText, "js", test262SourceType(sourceText))) ctx.skip();
   });
 });

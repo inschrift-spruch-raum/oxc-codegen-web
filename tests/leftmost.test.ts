@@ -381,7 +381,7 @@ const CONTEXTS: Context[] = [
 
 describe.concurrent("leftmost position", () => {
   describe.for(CONTEXTS)("$name", (context) => {
-    it.for(CASES)("$name", (testCase, ctx) => {
+    it.for(CASES)("$name", async (testCase, ctx) => {
       const built = context.build(testCase);
 
       // Reported as skipped, carrying the reason, rather than left out of the run
@@ -389,7 +389,7 @@ describe.concurrent("leftmost position", () => {
 
       const lang = testCase.lang ?? "js";
       const sourceType = context.module || testCase.module ? "module" : "script";
-      const checked = checkFixture(`leftmost.${lang}`, built.source, lang, sourceType);
+      const checked = await checkFixture(`leftmost.${lang}`, built.source, lang, sourceType);
       expect(checked, `snippet does not parse:\n${built.source}`).toBe(true);
     });
   });

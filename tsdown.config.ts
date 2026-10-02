@@ -31,10 +31,10 @@ const definedGlobals = {
 };
 
 // Base config.
-// `platform: "node"` because the entry point loads the printer with `createRequire`.
+// The entry point uses only standard ESM and is shared by Node.js and browser bundlers.
 const commonConfig = defineConfig({
-  platform: "node",
-  target: "node20",
+  platform: "neutral",
+  target: "es2020",
   outDir: "dist",
   format: "esm",
   unbundle: false,
@@ -68,7 +68,7 @@ const minifyConfig = DEBUG
 // - `TS`: TypeScript syntax support. JS-only builds lose all the TS field checks (via minifier dead-code removal)
 //   and the TS switch arms + printer functions (via `strip_ts.ts`).
 //
-// `src/index.ts` loads whichever build the caller's options call for.
+// `src/index.ts` dynamically imports whichever build the caller's options call for.
 //
 // In builds without source maps, nothing reads the mapping arguments the mapped writes take,
 // so `unmap_writes` rewrites every mapped write call, and the imports which bring them in,

@@ -13,7 +13,7 @@
 import { parseSync } from "oxc-parser";
 import { describe, expect, test } from "vitest";
 
-import { printSync } from "../dist/index.js";
+import { print } from "../dist/index.js";
 
 import type * as ESTree from "@oxc-project/types";
 
@@ -100,8 +100,8 @@ type Case = [name: string, ast: ESTree.Program | ESTree.Statement, output: strin
  * @param cases - The cases
  */
 function checkCases(cases: Case[]): void {
-  test.each(cases)("%s", (_name, ast, output) => {
-    expect(printSync(ast).code).toBe(output);
+  test.each(cases)("%s", async (_name, ast, output) => {
+    expect((await print(ast)).code).toBe(output);
   });
 }
 
@@ -119,20 +119,20 @@ describe("single statements", () => {
     return statement;
   }
 
-  test("prints a JavaScript statement", () => {
+  test("prints a JavaScript statement", async () => {
     const statement = parseStatement("statement.js", "const value=1;");
-    expect(printSync(statement).code).toBe("const value = 1;\n");
+    expect((await print(statement)).code).toBe("const value = 1;\n");
   });
 
-  test("prints a TypeScript statement", () => {
+  test("prints a TypeScript statement", async () => {
     const statement = parseStatement("statement.ts", "type Box<T>={value:T};");
-    expect(printSync(statement, { ts: true }).code).toBe("type Box<T> = {\n\tvalue: T;\n};\n");
+    expect((await print(statement, { ts: true })).code).toBe("type Box<T> = {\n\tvalue: T;\n};\n");
   });
 
-  test("returns a source map for a JavaScript statement", () => {
+  test("returns a source map for a JavaScript statement", async () => {
     const sourceText = "const value=1;";
     const statement = parseStatement("statement.js", sourceText);
-    const { code, map } = printSync(statement, {
+    const { code, map } = await print(statement, {
       sourcemap: true,
       sourceFilename: "statement.js",
       sourceText,
@@ -148,14 +148,14 @@ describe("single statements", () => {
 describe("indent", () => {
   const ast = e(id("x"));
 
-  test.each(["", "x", "\n", "\r\n", " x "])("rejects %j", (indent) => {
-    expect(() => printSync(ast, { indent })).toThrow(
+  test.each(["", "x", "\n", "\r\n", " x "])("rejects %j", async (indent) => {
+    await expect(print(ast, { indent })).rejects.toThrow(
       new TypeError("`indent` must be a non-empty string containing only spaces and tabs"),
     );
   });
 
-  test.each([4, null, {}])("rejects non-string value %j", (indent) => {
-    expect(() => printSync(ast, { indent: indent as unknown as string })).toThrow(
+  test.each([4, null, {}])("rejects non-string value %j", async (indent) => {
+    await expect(print(ast, { indent: indent as unknown as string })).rejects.toThrow(
       new TypeError("`indent` must be a non-empty string containing only spaces and tabs"),
     );
   });
@@ -164,12 +164,12 @@ describe("indent", () => {
 describe("starting indent level", () => {
   const ast = e(id("x"));
 
-  test("indents from a valid level", () => {
-    expect(printSync(ast, { startingIndentLevel: 1 }).code).toBe("\tx;\n");
+  test("indents from a valid level", async () => {
+    expect((await print(ast, { startingIndentLevel: 1 })).code).toBe("\tx;\n");
   });
 
-  test("accepts the maximum level", () => {
-    expect(printSync(ast, { startingIndentLevel: 1000 }).code).toBe(`${"\t".repeat(1000)}x;\n`);
+  test("accepts the maximum level", async () => {
+    expect((await print(ast, { startingIndentLevel: 1000 })).code).toBe(`${"\t".repeat(1000)}x;\n`);
   });
 
   test.each([
@@ -179,8 +179,8 @@ describe("starting indent level", () => {
     ["fraction", 0.5],
     ["negative", -1],
     ["above the maximum", 1001],
-  ])("rejects %s", (_name, startingIndentLevel) => {
-    expect(() => printSync(ast, { startingIndentLevel })).toThrow(
+  ])("rejects %s", async (_name, startingIndentLevel) => {
+    await expect(print(ast, { startingIndentLevel })).rejects.toThrow(
       "`startingIndentLevel` must be a non-negative safe integer no greater than 1000",
     );
   });
@@ -287,14 +287,14 @@ describe("strings", () => {
     ["lone low surrogate", e(str("\udc00")), '("\\udc00");\n'],
   ]);
 
-  test("template literal quasis also escape script close tags", () => {
+  test("template literal quasis also escape script close tags", async () => {
     const { program: parsed, errors } = parseSync(
       "fixture.js",
       "const value = `before </ScRiPt> after`;",
       PARSE_OPTIONS,
     );
     if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
-    expect(printSync(parsed).code).toBe("const value = `before <\\/ScRiPt> after`;\n");
+    expect((await print(parsed)).code).toBe("const value = `before <\\/ScRiPt> after`;\n");
   });
 });
 
@@ -384,10 +384,10 @@ describe("directives", () => {
     ["only", `"use strict";`, `"use strict";\n`],
     ["none", `foo;\nbar;`, `foo;\nbar;\n`],
     ["string-mid-body", `foo;\n"bar";`, `foo;\n"bar";\n`],
-  ])("%s", (_name, source, output) => {
+  ])("%s", async (_name, source, output) => {
     const { program: parsed, errors } = parseSync("fixture.js", source, PARSE_OPTIONS);
     if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
-    expect(printSync(parsed).code).toBe(output);
+    expect((await print(parsed)).code).toBe(output);
   });
 });
 
@@ -427,10 +427,10 @@ describe("export default declarations", () => {
       `export default function X() {}\nconst y = 1;`,
       `export default function X() {}\nconst y = 1;\n`,
     ],
-  ])("%s", (_name, source, output) => {
+  ])("%s", async (_name, source, output) => {
     const { program: parsed, errors } = parseSync("fixture.ts", source, PARSE_OPTIONS);
     if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
-    expect(printSync(parsed, { ts: true }).code).toBe(output);
+    expect((await print(parsed, { ts: true })).code).toBe(output);
   });
 });
 
@@ -462,7 +462,7 @@ describe("JSX strings", () => {
     // `JSXText` reads `raw` the same way, so it carries the same hazard
     ["text-entity", `<Foo>a&amp;b</Foo>;`, `<Foo>a&amp;b</Foo>;\n`],
     ["text-entity-quot", `<Foo>&quot;</Foo>;`, `<Foo>&quot;</Foo>;\n`],
-  ])("%s", (_name, source, output) => {
+  ])("%s", async (_name, source, output) => {
     const parse = () => {
       const { program: parsed, errors } = parseSync("fixture.jsx", source, PARSE_OPTIONS);
       if (errors.length > 0) throw new Error(`fixture parse failed: ${errors[0].message}`);
@@ -470,12 +470,12 @@ describe("JSX strings", () => {
     };
 
     // From `raw`, as a parser supplies it
-    expect(printSync(parse(), { jsx: true }).code).toBe(output);
+    expect((await print(parse(), { jsx: true })).code).toBe(output);
 
     // From `value`, which is where a change in the parser would show
     const fromValue = parse();
     dropJsxRaw(fromValue);
-    expect(printSync(fromValue, { jsx: true }).code).toBe(output);
+    expect((await print(fromValue, { jsx: true })).code).toBe(output);
   });
 });
 

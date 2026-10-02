@@ -1,6 +1,6 @@
 # oxc-codegen-web
 
-Fast, synchronous code generation for JavaScript and TypeScript ASTs.
+Fast asynchronous code generation for JavaScript and TypeScript ASTs.
 
 `oxc-codegen-web` turns an [ESTree](https://github.com/estree/estree) or
 [TS-ESTree](https://typescript-eslint.io/packages/typescript-estree/) AST into formatted source
@@ -15,22 +15,25 @@ produce byte-identical output: tab indentation, double-quoted strings, and no co
 npm install oxc-codegen-web
 ```
 
-`oxc-codegen-web` is ESM-only and requires Node.js `^20.19.0` or `>=22.12.0`.
+`oxc-codegen-web` is ESM-only and supports Node.js `^20.19.0` or `>=22.12.0`. The same package entry works in browser bundlers because printer builds are loaded with standard dynamic `import()`.
 
 ## Quick start
 
 Pair it with [`oxc-parser`](https://www.npmjs.com/package/oxc-parser) to parse and print source code:
 
 ```js
-import { printSync } from "oxc-codegen-web";
+import { print } from "oxc-codegen-web";
 import { parseSync } from "oxc-parser";
 
 const { program } = parseSync("input.js", "const answer=6*7");
-const { code } = printSync(program);
+const { code } = await print(program);
 
 console.log(code);
 // const answer = 6 * 7;
 ```
+
+The first call loads only the selected JavaScript or TypeScript printer, with or without source maps.
+Later calls reuse that module through the runtime's module cache.
 
 You can also print a manually constructed AST:
 
@@ -57,7 +60,7 @@ const program = {
   ],
 };
 
-console.log(printSync(program).code);
+console.log((await print(program)).code);
 // console.log("Hello!");
 ```
 
@@ -68,7 +71,7 @@ Set `ts` when the AST can contain TypeScript nodes. For TSX, set both `ts` and `
 ```js
 const { program } = parseSync("component.tsx", "const Box = <T,>(value: T) => <div>{value}</div>");
 
-const { code } = printSync(program, {
+const { code } = await print(program, {
   ts: true,
   jsx: true,
 });
@@ -76,28 +79,28 @@ const { code } = printSync(program, {
 
 ## API
 
-### `printSync(node, options?)`
+### `print(node, options?)`
 
 ```ts
-function printSync(
+function print(
   node: ESTree.Program | ESTree.Statement,
   options?: Options,
-): {
+): Promise<{
   code: string;
   map: SourceMap | null;
-};
+}>;
 ```
 
-Prints a complete `Program` or a single statement and returns the generated source code,
+Prints a complete `Program` or a single statement and returns a promise for the generated source code,
 and (when requested) a standard Source Map v3 object.
 
 ```js
-import { printSync } from "oxc-codegen-web";
+import { print } from "oxc-codegen-web";
 import { parseSync } from "oxc-parser";
 
 const sourceText = "const answer=6*7";
 const { program } = parseSync("input.js", sourceText);
-const { code, map } = printSync(program, {
+const { code, map } = await print(program, {
   sourcemap: true,
   sourceFilename: "input.js",
   sourceText,
@@ -150,7 +153,7 @@ implementation details and performance constraints.
 
 ## Benchmarks
 
-Representative time per `printSync` call:
+Representative time per `print` call:
 
 | Fixture                      |     Bytes |       Time |
 | :--------------------------- | --------: | ---------: |

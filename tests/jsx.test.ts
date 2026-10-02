@@ -18,6 +18,6 @@ describe.concurrent("JSX", () => {
   // oxlint-disable-next-line vitest/expect-expect
   it.for(fixturePaths)("%s", async (path, ctx) => {
     const sourceText = await readFile(pathJoin(JSX_DIR_PATH, path), "utf8");
-    if (!checkFixture(path, sourceText, "jsx", "unambiguous")) ctx.skip();
+    if (!await checkFixture(path, sourceText, "jsx", "unambiguous")) ctx.skip();
   });
 });

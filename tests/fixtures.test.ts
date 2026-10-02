@@ -38,7 +38,7 @@ describe.concurrent("local fixtures", () => {
 
     // Local fixtures are ordinary source files rather than test cases with frontmatter. Let the
     // parser recognize imports and exports while still accepting scripts.
-    expect(checkFixture(path, sourceText, lang, "unambiguous")).toBe(true);
+    expect(await checkFixture(path, sourceText, lang, "unambiguous")).toBe(true);
   });
 });
 

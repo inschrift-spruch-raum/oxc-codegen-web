@@ -1,7 +1,7 @@
 import { parseSync } from "oxc-parser";
 import { describe, expect, it } from "vitest";
 
-import { printSync } from "../dist/index.js";
+import { print } from "../dist/index.js";
 
 const PARSE_OPTIONS = {
   preserveParens: false,
@@ -14,17 +14,17 @@ function parseProgram(sourceText: string) {
   return program;
 }
 
-function testPrintsProgram(): void {
+async function testPrintsProgram(): Promise<void> {
   expect.hasAssertions();
   const program = parseProgram("const value=1;");
-  expect(printSync(program).code).toBe("const value = 1;\n");
+  expect((await print(program)).code).toBe("const value = 1;\n");
 }
 
-function testPrintsSourceMap(): void {
+async function testPrintsSourceMap(): Promise<void> {
   expect.hasAssertions();
   const sourceText = "const value=1;";
   const program = parseProgram(sourceText);
-  const result = printSync(program, {
+  const result = await print(program, {
     sourcemap: true,
     sourceFilename: "index.test.js",
     sourceText,
@@ -40,4 +40,18 @@ function testPrintsSourceMap(): void {
 describe("public API", () => {
   it("prints a parsed program", testPrintsProgram);
   it("prints a parsed program with a source map", testPrintsSourceMap);
+  it("snapshots options before awaiting the printer", async () => {
+    const sourceText = "const value=1;";
+    const program = parseProgram(sourceText);
+    const options = {
+      sourcemap: true,
+      sourceFilename: "index.test.js",
+      sourceText,
+    };
+
+    const pending = print(program, options);
+    options.sourcemap = false;
+
+    expect((await pending).map).not.toBeNull();
+  });
 });

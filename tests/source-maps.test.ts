@@ -11,7 +11,7 @@ import { join as pathJoin } from "node:path";
 import { parseSync } from "oxc-parser";
 import { beforeAll, describe, expect, test } from "vitest";
 
-import { printSync } from "../dist/index.js";
+import { print } from "../dist/index.js";
 import { checkFixture, getEcmaScriptLineTable } from "./utils/common.ts";
 
 import type { Program } from "oxc-parser";
@@ -106,11 +106,11 @@ describe("source map conformance", () => {
       code: Array.from({ length: 100 }, (_, index) => `x${index};`).join("\r\n"),
       lang: "js" as const,
     },
-  ])("$name mappings match the official package", ({ name, code, lang }) => {
-    expect(checkFixture(name, code, lang, "module")).toBe(true);
+  ])("$name mappings match the official package", async ({ name, code, lang }) => {
+    expect(await checkFixture(name, code, lang, "module")).toBe(true);
   });
 
-  test("invalid source offsets fall back to the printed name", () => {
+  test("invalid source offsets fall back to the printed name", async () => {
     const code = "const name = 0;";
     const program = parseProgram("invalid-offset.js", code);
     const statement = program.body[0];
@@ -121,7 +121,7 @@ describe("source map conformance", () => {
     // Simulate a transformed AST whose old offsets are no longer valid for the source text
     identifier.end = code.length + 1;
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       sourcemap: true,
       sourceFilename: "invalid-offset.js",
       sourceText: code,
@@ -129,7 +129,7 @@ describe("source map conformance", () => {
     expect(decodeSourceMap(map!)).toContainEqual(expect.objectContaining({ name: "name" }));
   });
 
-  test("in-bounds non-identifier offsets fall back to the printed name", () => {
+  test("in-bounds non-identifier offsets fall back to the printed name", async () => {
     const code = "const name = 0;";
     const program = parseProgram("stale-offset.js", code);
     const statement = program.body[0];
@@ -141,7 +141,7 @@ describe("source map conformance", () => {
     identifier.start = code.indexOf(" ");
     identifier.end = identifier.start + 1;
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       sourcemap: true,
       sourceFilename: "stale-offset.js",
       sourceText: code,
@@ -151,7 +151,7 @@ describe("source map conformance", () => {
     expect(mappings).not.toContainEqual(expect.objectContaining({ name: "" }));
   });
 
-  test("stale identifier offsets preserve the original longer spelling", () => {
+  test("stale identifier offsets preserve the original longer spelling", async () => {
     const code = "const ab = 0;";
     const program = parseProgram("renamed.js", code);
     const statement = program.body[0];
@@ -160,7 +160,7 @@ describe("source map conformance", () => {
     if (identifier.type !== "Identifier") throw new Error("Expected identifier");
     identifier.name = "a";
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       sourcemap: true,
       sourceFilename: "renamed.js",
       sourceText: code,
@@ -168,7 +168,7 @@ describe("source map conformance", () => {
     expect(map?.names).toEqual(["ab"]);
   });
 
-  test("stale JSX identifier offsets preserve a name holding a dash", () => {
+  test("stale JSX identifier offsets preserve a name holding a dash", async () => {
     const code = 'const el = <data-foo bar-baz="1" />;';
     const program = parseProgram("renamed.jsx", code);
     const statement = program.body[0];
@@ -186,7 +186,7 @@ describe("source map conformance", () => {
     name.name = "X";
     attribute.name.name = "y";
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       jsx: true,
       sourcemap: true,
       sourceFilename: "renamed.jsx",
@@ -195,20 +195,20 @@ describe("source map conformance", () => {
     expect(map?.names).toEqual(["data-foo", "bar-baz"]);
   });
 
-  test("a private identifier is named only when it was renamed", () => {
+  test("a private identifier is named only when it was renamed", async () => {
     const code = "class C { #ab; m() { return this.#ab; } }";
     const program = parseProgram("private.js", code);
 
     // Printed as spelled, so nothing to name
     expect(
-      printSync(program, { sourcemap: true, sourceFilename: "private.js", sourceText: code }).map
+      (await print(program, { sourcemap: true, sourceFilename: "private.js", sourceText: code })).map
         ?.names,
     ).toEqual([]);
 
     // Rename it, as a mangler would - every occurrence
     renamePrivateIdentifiers(program, "ab", "a");
 
-    const { code: printed, map } = printSync(program, {
+    const { code: printed, map } = await print(program, {
       sourcemap: true,
       sourceFilename: "private.js",
       sourceText: code,
@@ -219,7 +219,7 @@ describe("source map conformance", () => {
     expect(map?.names).toEqual(["#ab"]);
   });
 
-  test("a plain identifier printed where the source was private is named with the `#`", () => {
+  test("a plain identifier printed where the source was private is named with the `#`", async () => {
     const code = "class C { #ab; m() { return this.#ab; } }";
     const program = parseProgram("unprivate.js", code);
     const member = memberExpressionInFirstMethod(program);
@@ -229,7 +229,7 @@ describe("source map conformance", () => {
     const { start, end } = member.property;
     member.property = { type: "Identifier", name: "ab", start, end };
 
-    const { code: printed, map } = printSync(program, {
+    const { code: printed, map } = await print(program, {
       sourcemap: true,
       sourceFilename: "unprivate.js",
       sourceText: code,
@@ -238,7 +238,7 @@ describe("source map conformance", () => {
     expect(map?.names).toEqual(["#ab"]);
   });
 
-  test("a private identifier printed where the source was plain is named without a `#`", () => {
+  test("a private identifier printed where the source was plain is named without a `#`", async () => {
     const code = "class C { m() { return this.ffoo; } }";
     const program = parseProgram("privatised.js", code);
     const member = memberExpressionInFirstMethod(program);
@@ -248,7 +248,7 @@ describe("source map conformance", () => {
     const { start, end } = member.property;
     member.property = { type: "PrivateIdentifier", name: "foo", start, end };
 
-    const { code: printed, map } = printSync(program, {
+    const { code: printed, map } = await print(program, {
       sourcemap: true,
       sourceFilename: "privatised.js",
       sourceText: code,
@@ -257,12 +257,12 @@ describe("source map conformance", () => {
     expect(map?.names).toEqual(["ffoo"]);
   });
 
-  test("handles transformed ASTs whose source locations move backwards", () => {
+  test("handles transformed ASTs whose source locations move backwards", async () => {
     const code = `const first = 1;\n${"\n".repeat(5000)}const second = 2;`;
     const program = parseProgram("reordered.js", code);
     program.body.reverse();
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       sourcemap: true,
       sourceFilename: "reordered.js",
       sourceText: code,
@@ -272,12 +272,12 @@ describe("source map conformance", () => {
     expect(mappings.find((mapping) => mapping.generatedLine === 2)?.originalLine).toBe(1);
   });
 
-  test("returns a source map only when requested", () => {
+  test("returns a source map only when requested", async () => {
     const code = "const value = 1;";
     const program = parseProgram("return-map.js", code);
-    expect(printSync(program).map).toBeNull();
+    expect((await print(program)).map).toBeNull();
 
-    const { map } = printSync(program, {
+    const { map } = await print(program, {
       sourcemap: true,
       sourceFilename: "return-map.js",
       sourceText: code,
@@ -298,33 +298,31 @@ describe("source map options", () => {
     ["missing", undefined],
     ["null", null],
     ["number", 1],
-  ])("rejects %s sourceText", (_name, sourceText) => {
-    expect(() =>
-      printSync(program, { sourcemap: true, sourceText: sourceText as unknown as string }),
-    ).toThrow(new TypeError("`sourceText` must be a string when `sourcemap` is true"));
+  ])("rejects %s sourceText", async (_name, sourceText) => {
+    await expect(
+      print(program, { sourcemap: true, sourceText: sourceText as unknown as string }),
+    ).rejects.toThrow(new TypeError("`sourceText` must be a string when `sourcemap` is true"));
   });
 
   test.each([
     ["null", null],
     ["number", 1],
-  ])("rejects %s sourceFilename", (_name, sourceFilename) => {
-    expect(() =>
-      printSync(program, {
+  ])("rejects %s sourceFilename", async (_name, sourceFilename) => {
+    await expect(
+      print(program, {
         sourcemap: true,
         sourceText: code,
         sourceFilename: sourceFilename as unknown as string,
       }),
-    ).toThrow(new TypeError("`sourceFilename` must be a string when supplied"));
+    ).rejects.toThrow(new TypeError("`sourceFilename` must be a string when supplied"));
   });
 
-  test("accepts valid source map options", () => {
-    expect(
-      printSync(program, {
-        sourcemap: true,
-        sourceText: code,
-        sourceFilename: "options.js",
-      }).map,
-    ).toMatchObject({
+  test("accepts valid source map options", async () => {
+    expect((await print(program, {
+      sourcemap: true,
+      sourceText: code,
+      sourceFilename: "options.js",
+    })).map).toMatchObject({
       sources: ["options.js"],
       sourcesContent: [code],
     });
@@ -469,7 +467,7 @@ interface Printed {
 function addFixtureTests(fixture: Fixture) {
   let printed!: Printed;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     const { code } = fixture;
     if (code === null) return;
 
@@ -477,15 +475,15 @@ function addFixtureTests(fixture: Fixture) {
     const { jsx, ts } = fixture;
 
     // Both builds through the public API.
-    // `printSync` picks the maps build when `sourcemap` is true, and the no-maps build when it is not.
-    const { code: withMaps, map } = printSync(program, {
+    // `print` picks the maps build when `sourcemap` is true, and the no-maps build when it is not.
+    const { code: withMaps, map } = await print(program, {
       jsx,
       ts,
       sourcemap: true,
       sourceFilename: fixture.name,
       sourceText: code,
     });
-    const { code: withoutMaps } = printSync(program, { jsx, ts });
+    const { code: withoutMaps } = await print(program, { jsx, ts });
 
     printed = {
       withMaps,
@@ -594,9 +592,9 @@ const INDENT_CASES = [undefined, "\t", "  ", "    ", "\t\t", " \t", "\t "];
 describe("indent option", () => {
   test.each(
     INDENT_CASES.map((indent) => ({ label: JSON.stringify(indent) ?? "undefined", indent })),
-  )("indent=$label", ({ indent }) => {
+  )("indent=$label", async ({ indent }) => {
     const program = parseProgram("indent.js", INLINE_JS);
-    const { code: out, map } = printSync(program, {
+    const { code: out, map } = await print(program, {
       indent: indent as string | undefined,
       sourcemap: true,
       sourceFilename: "indent.js",

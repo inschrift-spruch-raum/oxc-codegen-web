@@ -99,7 +99,7 @@ So `oxc-codegen` has to find a different solution. Every time it pushes a string
 in `state.last` what the output now ends with. `state.output` never needs to be read from.
 
 The rope is flattened once, at the end. Whatever the caller does with the returned code will flatten it anyway
-(and `generateSourceMap` scans it), so `printSync` pre-flattens with the fastest method available.
+(and `generateSourceMap` scans it), so `print` pre-flattens with the fastest method available.
 A large output is flattened in chunks along the way rather than all at once at the end -
 see `print/flatten.ts` for the two reasons.
 
@@ -332,10 +332,21 @@ The default comparison suite builds the release variants before running - `pnpm 
 | `print_ts.js`      | true  | false        | 39 KB |
 | `print_ts_maps.js` | true  | true         | 40 KB |
 
-`index.ts` picks one from the caller's `ts` and `sourcemap` options and `require`s it on first use -
-`require` rather than `import()`, because `printSync` is synchronous.
+`index.ts` picks one from the caller's `ts` and `sourcemap` options and dynamically imports it on first use.
+The import promise is cached, so a caller printing only JavaScript never loads, parses or compiles the TypeScript
+printers at all. The public `print` function awaits that first load and then invokes the selected printer
+synchronously inside the module.
 
-A caller printing only JavaScript never loads, parses or compiles the TypeScript printers at all.
+### Node.js and browser loading
+
+The same root entry serves Node.js and browsers. `print(node, options)` returns a promise; the first call
+uses native dynamic `import()` to fetch only the selected sibling module, and later calls reuse the cached
+promise and the runtime's module cache. Browser bundlers can turn the four explicit imports into four
+code-split chunks, while Node.js loads the same ESM files from disk.
+
+The promise is required because neither runtime can synchronously fetch a not-yet-loaded module during
+a function call. The printing operation itself remains synchronous inside the loaded printer, but the
+public boundary is consistently asynchronous in every runtime.
 
 ### Why separate TS and JS builds
 

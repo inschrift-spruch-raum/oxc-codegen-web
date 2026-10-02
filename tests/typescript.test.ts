@@ -61,7 +61,7 @@ describe.concurrent("TypeScript", () => {
       // Always a TS-shaped AST, even for the `.js` units. The TypeScript suite has fixtures
       // which put TS syntax in a `.js` file on purpose, and Oxc's Rust parser keeps and prints it,
       // so the JS side has to be able to see it too.
-      const checkedUnit = checkFixture(
+      const checkedUnit = await checkFixture(
         name,
         content,
         lang,

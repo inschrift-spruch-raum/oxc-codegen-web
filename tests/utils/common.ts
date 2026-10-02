@@ -16,7 +16,7 @@ import { join as pathJoin } from "node:path";
 import { parseSync } from "oxc-parser";
 import { expect } from "vitest";
 
-import { printSync } from "../../dist/index.js";
+import { print } from "../../dist/index.js";
 
 import { printSync as referencePrintSync } from "oxc-codegen";
 
@@ -94,13 +94,13 @@ export function getEcmaScriptLineTable(sourceText: string): {
  *   side is being asked to reproduce something it was never told.
  * @returns `true` if the fixture was checked, `false` if it does not parse
  */
-export function checkFixture(
+export async function checkFixture(
   filename: string,
   sourceText: string,
   lang: Lang,
   sourceType: SourceTypeOption,
   astType?: "js" | "ts",
-): boolean {
+): Promise<boolean> {
   const ts = astType === undefined ? lang[0] === "t" : astType === "ts";
   const jsx = lang.endsWith("x");
 
@@ -122,7 +122,7 @@ export function checkFixture(
 
     const options = { ts, jsx };
     const { code: expected } = referencePrintSync(program, options);
-    const { code: actual } = printSync(program, options);
+    const { code: actual } = await print(program, options);
     expect(actual, `preserveParens: ${preserveParens}`).toBe(expected);
 
     // Source maps use the maps-enabled build, which is compiled separately from the normal printer.
@@ -135,7 +135,7 @@ export function checkFixture(
       sourceText,
     };
     const expectedWithSourceMap = referencePrintSync(program, mapOptions);
-    const actualWithSourceMap = printSync(program, mapOptions);
+    const actualWithSourceMap = await print(program, mapOptions);
     expect(actualWithSourceMap.code, `preserveParens: ${preserveParens}, sourceMap: code`).toBe(
       expectedWithSourceMap.code,
     );

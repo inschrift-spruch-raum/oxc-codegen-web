@@ -4,7 +4,7 @@
 // Each fixture is printed three ways:
 //
 // 1. Without source maps:
-//    No `sourcemap` option is given, so `printSync` selects the builds compiled without source map support,
+//    No `sourcemap` option is given, so `print` selects the builds compiled without source map support,
 //    which is what most callers use.
 //
 // 2. With source maps:
@@ -29,7 +29,7 @@ import { join as pathJoin } from "node:path";
 import { parseSync } from "oxc-parser";
 import { describe, test } from "vitest";
 
-import { printSync as oxcPrintSync } from "./dist/index.js";
+import { print } from "./dist/index.js";
 
 // `TestFiles::minimal()` from `tasks/common/src/test_file.rs`, which the Rust `codegen` benchmark
 // uses, plus 2 larger pure-JS files from `TestFiles::minifier()` for throughput on real bundles.
@@ -120,7 +120,7 @@ for (const { filename, code } of fixtures) {
   // an original name, and what `generateSourceMap` scans for line breaks at the end.
   //
   // `skipSourcemapGeneration` is spelled out in both, so the 2 objects share one shape -
-  // `printSync` and the `State` constructor read these options on every call.
+  // `print` and the `State` constructor read these options on every call.
   // It is benchmarks-only, so it is absent from `Options`, which is why neither object is passed
   // as a literal - an excess property is an error on a literal, but not on a variable.
   const mapOptions = {
@@ -133,9 +133,11 @@ for (const { filename, code } of fixtures) {
   const mapNoGenerationOptions = { ...mapOptions, skipSourcemapGeneration: true };
 
   // Print once before timing, so a benchmark can never measure the printer bailing out
-  oxcPrintSync(program, options);
-  oxcPrintSync(program, mapOptions);
-  oxcPrintSync(program, mapNoGenerationOptions);
+  await Promise.all([
+    print(program, options),
+    print(program, mapOptions),
+    print(program, mapNoGenerationOptions),
+  ]);
 
   // Each benchmark includes flattening the string as whatever user does with the returned code string
   // (indexing into it, slicing it, writing it to a file) will involve flattening first.
@@ -145,22 +147,22 @@ for (const { filename, code } of fixtures) {
   // from optimizing out the `charCodeAt` call as dead code.
   describe(`${filename} (${code.length} bytes)`, () => {
     test("oxc-codegen", BENCH_TEST_OPTIONS, async ({ bench }) => {
-      await bench("oxc-codegen", () => {
-        const { code } = oxcPrintSync(program, options);
+      await bench("oxc-codegen", async () => {
+        const { code } = await print(program, options);
         flattenSink ^= code.charCodeAt(0);
       }).run(BENCH_OPTIONS);
     });
 
     test("oxc-codegen sourcemaps", BENCH_TEST_OPTIONS, async ({ bench }) => {
-      await bench("oxc-codegen sourcemaps", () => {
-        const { code } = oxcPrintSync(program, mapOptions);
+      await bench("oxc-codegen sourcemaps", async () => {
+        const { code } = await print(program, mapOptions);
         flattenSink ^= code.charCodeAt(0);
       }).run(BENCH_OPTIONS);
     });
 
     test("oxc-codegen sourcemaps no generation", BENCH_TEST_OPTIONS, async ({ bench }) => {
-      await bench("oxc-codegen sourcemaps no generation", () => {
-        const { code } = oxcPrintSync(program, mapNoGenerationOptions);
+      await bench("oxc-codegen sourcemaps no generation", async () => {
+        const { code } = await print(program, mapNoGenerationOptions);
         flattenSink ^= code.charCodeAt(0);
       }).run(BENCH_OPTIONS);
     });

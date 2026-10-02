@@ -9,7 +9,7 @@ export interface SourceMap {
   sourcesContent?: string[];
 }
 
-/** Result returned by `printSync`. */
+/** Result returned by `print`. */
 export interface CodegenResult {
   code: string;
   map: SourceMap | null;
