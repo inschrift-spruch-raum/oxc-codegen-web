@@ -45,6 +45,7 @@
     "build-test": "pnpm run build-dev && node scripts/prepare-fixtures.mjs",
     "build-bench": "cross-env BENCHMARKS=true node scripts/build.ts",
     "fmt": "oxfmt -c oxfmtrc.jsonc",
+    "fmt:check": "oxfmt -c oxfmtrc.jsonc --check src tests",
     "lint": "oxlint -c oxlintrc.json --deny-warnings --report-unused-disable-directives src",
     "test": "vitest run",
     "bench": "pnpm run build-bench && vitest bench --run bench.bench.ts"
