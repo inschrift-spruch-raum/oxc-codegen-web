@@ -17,8 +17,7 @@
   "author": "Boshen and oxc contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/oxc-project/oxc.git",
-    "directory": "packages/codegen"
+    "url": "https://github.com/inschrift-spruch-raum/oxc-codegen-web.git"
   },
   "files": [
     "dist"
